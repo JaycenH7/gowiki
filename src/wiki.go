@@ -1,14 +1,4 @@
 // https://golang.org/doc/articles/wiki/
-//
-// tasks
-//
-// - Implement inter-page linking by converting instances of [PageName] to
-// <a href="/view/PageName">PageName</a>. (hint: you could use regexp.ReplaceAllFunc to do this)
-//
-// - Spruce up the page templates by making them valid HTML and adding some CSS rules.
-//
-// - Add a home button
-//
 
 package main
 
@@ -26,7 +16,7 @@ import (
 )
 
 // unused imports
-var _ = fmt.Printf
+// var _ = fmt.Printf
 
 // define variables
 var rootTitle = "FrontPage"
@@ -41,6 +31,10 @@ var logFile *os.File
 var logLevel string
 var listenPort int
 
+// #############
+// ## Structs ##
+// #############
+
 // describe a webpage
 type Page struct {
 	// Body is []byte instead of string because io libraries
@@ -48,6 +42,10 @@ type Page struct {
 	Title string
 	Body  []byte
 }
+
+// ###############
+// ## Functions ##
+// ###############
 
 // check title is valid URL
 func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
@@ -134,6 +132,7 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 	}
 }
 
+// set log level
 func setLogLevel() {
     logLevel = strings.ToUpper(logLevel)
     formatLogLevel := logLevel + ":"
@@ -149,6 +148,7 @@ func setLogLevel() {
     initLog()
 }
 
+// initial logs if debug
 func initLog() {
     template_list := templates.DefinedTemplates()
     if logLevel == "DEBUG" {
@@ -156,6 +156,7 @@ func initLog() {
     }
 }
 
+// serve web pages
 func servePages() {
 	http.HandleFunc("/", rootHandler)
 	http.HandleFunc("/view/", makeHandler(viewHandler))
@@ -164,6 +165,7 @@ func servePages() {
 	http.ListenAndServe(":8080", nil)
 }
 
+// parse command-line arguments
 func parseArgs() {
     flag.StringVar(&logLevel, "log", "INFO", "logging level")
     flag.IntVar(&listenPort, "port", 8080, "listening port")
