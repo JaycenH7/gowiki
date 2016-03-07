@@ -3,16 +3,16 @@
 package main
 
 import (
-    "strings"
 	"errors"
+	"flag"
+	"fmt"
 	"html/template"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 	"regexp"
-    "log"
-    "os"
-    "flag"
-    "fmt"
+	"strings"
 )
 
 // unused imports
@@ -75,7 +75,7 @@ func loadPage(title string) (*Page, error) {
 
 // load template
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
-    //err := templates.ExecuteTemplate(w, "./tmpl/"+tmpl+".html", p)
+	//err := templates.ExecuteTemplate(w, "./tmpl/"+tmpl+".html", p)
 	err := templates.ExecuteTemplate(w, tmpl+".html", p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -134,26 +134,26 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 
 // set log level
 func setLogLevel() {
-    logLevel = strings.ToUpper(logLevel)
-    formatLogLevel := logLevel + ":"
+	logLevel = strings.ToUpper(logLevel)
+	formatLogLevel := logLevel + ":"
 
-    logFile, err := os.OpenFile("./log/wiki.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-    if err != nil {
-        fmt.Printf("error opening file: %v", err)
-        os.Exit(1)
-    }
-    logger = log.New(logFile, formatLogLevel, log.Ltime)
-    // logger = log.New(os.Stdout, formatLogLevel, log.Ltime)
+	logFile, err := os.OpenFile("./log/wiki.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		fmt.Printf("error opening file: %v", err)
+		os.Exit(1)
+	}
+	logger = log.New(logFile, formatLogLevel, log.Ltime)
+	// logger = log.New(os.Stdout, formatLogLevel, log.Ltime)
 
-    initLog()
+	initLog()
 }
 
 // initial logs if debug
 func initLog() {
-    template_list := templates.DefinedTemplates()
-    if logLevel == "DEBUG" {
-        logger.Print(template_list)
-    }
+	template_list := templates.DefinedTemplates()
+	if logLevel == "DEBUG" {
+		logger.Print(template_list)
+	}
 }
 
 // serve web pages
@@ -167,13 +167,13 @@ func servePages() {
 
 // parse command-line arguments
 func parseArgs() {
-    flag.StringVar(&logLevel, "log", "INFO", "logging level")
-    flag.IntVar(&listenPort, "port", 8080, "listening port")
-    flag.Parse()
+	flag.StringVar(&logLevel, "log", "INFO", "logging level")
+	flag.IntVar(&listenPort, "port", 8080, "listening port")
+	flag.Parse()
 }
 
 func main() {
-    parseArgs()
-    setLogLevel()
-    servePages()
+	parseArgs()
+	setLogLevel()
+	servePages()
 }
