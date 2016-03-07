@@ -1,8 +1,6 @@
 // https://golang.org/doc/articles/wiki/
-
+//
 // tasks
-// - Store templates in tmpl/ and page data in data/.
-//    - improve code efficiency
 //
 // - Implement inter-page linking by converting instances of [PageName] to
 // <a href="/view/PageName">PageName</a>. (hint: you could use regexp.ReplaceAllFunc to do this)
@@ -10,25 +8,38 @@
 // - Spruce up the page templates by making them valid HTML and adding some CSS rules.
 //
 // - Add a home button
+//
 
 package main
 
 import (
+    "strings"
 	"errors"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"regexp"
+    "log"
+    "os"
+    "flag"
+    "fmt"
 )
 
-var templates = template.Must(template.ParseFiles(
-	"tmpl/edit.html",
-	"tmpl/view.html",
-))
+// unused imports
+var _ = fmt.Printf
 
+// define variables
+var rootTitle = "FrontPage"
+var templates = template.Must(template.ParseGlob("./templates/*.html"))
 var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 
-var rootTitle = "FrontPage"
+// define structs
+var logger *log.Logger
+var logFile *os.File
+
+// command-line options
+var logLevel string
+var listenPort int
 
 // describe a webpage
 type Page struct {
@@ -66,7 +77,8 @@ func loadPage(title string) (*Page, error) {
 
 // load template
 func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
-	err := templates.ExecuteTemplate(w, "tmpl/"+tmpl+".html", p)
+    //err := templates.ExecuteTemplate(w, "./tmpl/"+tmpl+".html", p)
+	err := templates.ExecuteTemplate(w, tmpl+".html", p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -122,10 +134,44 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 	}
 }
 
-func main() {
+func setLogLevel() {
+    logLevel = strings.ToUpper(logLevel)
+    formatLogLevel := logLevel + ":"
+
+    logFile, err := os.OpenFile("./log/wiki.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+    if err != nil {
+        fmt.Printf("error opening file: %v", err)
+        os.Exit(1)
+    }
+    logger = log.New(logFile, formatLogLevel, log.Ltime)
+    // logger = log.New(os.Stdout, formatLogLevel, log.Ltime)
+
+    initLog()
+}
+
+func initLog() {
+    template_list := templates.DefinedTemplates()
+    if logLevel == "DEBUG" {
+        logger.Print(template_list)
+    }
+}
+
+func servePages() {
 	http.HandleFunc("/", rootHandler)
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
 	http.ListenAndServe(":8080", nil)
+}
+
+func parseArgs() {
+    flag.StringVar(&logLevel, "log", "INFO", "logging level")
+    flag.IntVar(&listenPort, "port", 8080, "listening port")
+    flag.Parse()
+}
+
+func main() {
+    parseArgs()
+    setLogLevel()
+    servePages()
 }
